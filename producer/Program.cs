@@ -45,7 +45,7 @@ using (connection)
 
         while (true)
         {
-            string message = DateTime.Now.ToString("MM/dd/yyyy hh:mm:ss.ffffff");
+            string message = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss.ffffff");
             var body = Encoding.ASCII.GetBytes(message);
             channel.BasicPublish(exchange: "", routingKey: "hello", basicProperties: null, body: body);
             Console.WriteLine($"PRODUCER sent {message}");
