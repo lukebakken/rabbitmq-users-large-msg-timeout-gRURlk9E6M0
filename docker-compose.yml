@@ -8,12 +8,21 @@ networks:
 services:
   producer:
     build: producer
+    networks:
+      - rabbitnet
     depends_on:
       - rmq
   consumer:
     build: consumer
+    networks:
+      - rabbitnet
     depends_on:
       - rmq
   rmq:
     build: rmq
     hostname: rabbitmq
+    networks:
+      - rabbitnet
+    ports:
+      # HOST:CONTAINER
+      - 15672:15672

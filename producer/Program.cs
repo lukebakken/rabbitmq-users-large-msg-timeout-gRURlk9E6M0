@@ -1,4 +1,5 @@
 ﻿using RabbitMQ.Client;
+using RabbitMQ.Client.Events;
 using RabbitMQ.Client.Exceptions;
 
 using System.Text;
@@ -39,17 +40,53 @@ using (connection)
     }
     else
     {
-        using var channel = connection.CreateModel();
-
-        channel.QueueDeclare(queue: "hello", durable: false, exclusive: false, autoDelete: false, arguments: null);
-
-        while (true)
+        connection.CallbackException += (s, ea) =>
         {
-            string message = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss.ffffff");
-            var body = Encoding.ASCII.GetBytes(message);
-            channel.BasicPublish(exchange: "", routingKey: "hello", basicProperties: null, body: body);
-            Console.WriteLine($"PRODUCER sent {message}");
-            Thread.Sleep(TimeSpan.FromSeconds(5));
+            var cea = (CallbackExceptionEventArgs)ea;
+            Console.Error.WriteLine("PRODUCER: connection.CallbackException: {cea}");
+        };
+
+        connection.ConnectionBlocked += (s, ea) =>
+        {
+            var cbea = (ConnectionBlockedEventArgs)ea;
+            Console.Error.WriteLine("PRODUCER: connection.ConnectionBlocked: {cbea}");
+        };
+
+        connection.ConnectionUnblocked += (s, ea) =>
+        {
+            Console.Error.WriteLine("PRODUCER: connection.ConnectionUnblocked: {ea}");
+        };
+
+        connection.ConnectionShutdown += (s, ea) =>
+        {
+            var sdea = (ShutdownEventArgs)ea;
+            Console.Error.WriteLine("PRODUCER: connection.ConnectionShutdown: {sdea}");
+        };
+
+        using (var channel = connection.CreateModel())
+        {
+            channel.CallbackException += (s, ea) =>
+            {
+                var cea = (CallbackExceptionEventArgs)ea;
+                Console.Error.WriteLine("PRODUCER: channel.CallbackException: {cea}");
+            };
+
+            channel.ModelShutdown += (s, ea) =>
+            {
+                var sdea = (ShutdownEventArgs)ea;
+                Console.Error.WriteLine("PRODUCER: channel.ModelShutdown: {sdea}");
+            };
+
+            channel.QueueDeclare(queue: "hello", durable: false, exclusive: false, autoDelete: false, arguments: null);
+
+            while (true)
+            {
+                string message = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss.ffffff");
+                var body = Encoding.ASCII.GetBytes(message);
+                channel.BasicPublish(exchange: "", routingKey: "hello", basicProperties: null, body: body);
+                Console.WriteLine($"PRODUCER sent {message}");
+                Thread.Sleep(TimeSpan.FromSeconds(1));
+            }
         }
     }
 }
