@@ -1,9 +1,19 @@
 #!/bin/bash
 
 set -o xtrace
-set -o errexit
 set -o nounset
+set -o errexit
 set -o pipefail
 
-# Note: POST is inferred
-curl -4vvvd '{"name" : "rabbitmq", "listen" : "proxy:55672", "upstream" : "rabbitmq:5672"}' http://proxy:8474/proxies
+readonly arg1="${1:-undefined]}"
+
+if [[ $arg1 == 'init' ]]
+then
+    # Note: POST is inferred
+    curl -sd '{"name" : "rabbitmq-producer", "listen" : "proxy:55000", "upstream" : "rabbitmq:5672"}' http://proxy:8474/proxies
+    curl -sd '{"name" : "rabbitmq-consumer", "listen" : "proxy:55001", "upstream" : "rabbitmq:5672"}' http://proxy:8474/proxies
+else
+    # We must be running a command like this:
+    # docker-compose run proxy-sidecar curl -4vvvd '{"type" : "latency", "attributes" : {"latency" : 2000}}' http://proxy:8474/proxies/rabbitmq-producer/toxics
+    "$@"
+fi

@@ -15,13 +15,28 @@ void CancelHandler(object? sender, ConsoleCancelEventArgs e)
 
 Console.CancelKeyPress += new ConsoleCancelEventHandler(CancelHandler);
 
-Console.WriteLine("CONSUMER: waiting 5 seconds to try initial connection");
+string hostName = "rabbitmq";
+ushort port = 5672;
+
+string? hostNameStr = Environment.GetEnvironmentVariable("RABBITMQ_NODENAME");
+if (false == String.IsNullOrWhiteSpace(hostNameStr))
+{
+    hostName = hostNameStr;
+}
+
+string? nodePortStr = Environment.GetEnvironmentVariable("RABBITMQ_NODE_PORT");
+if (false == String.IsNullOrWhiteSpace(nodePortStr))
+{
+    port = ushort.Parse(nodePortStr);
+}
+
+Console.WriteLine($"CONSUMER: waiting 5 seconds to try initial connection to {hostName}:{port}");
 Thread.Sleep(TimeSpan.FromSeconds(5));
 
 var factory = new ConnectionFactory()
 {
-    HostName = "rabbitmq",
-    Port = 5672
+    HostName = hostName,
+    Port = port
 };
 
 bool connected = false;
@@ -57,24 +72,24 @@ using (connection)
         connection.CallbackException += (s, ea) =>
         {
             var cea = (CallbackExceptionEventArgs)ea;
-            Console.Error.WriteLine("CONSUMER: connection.CallbackException: {cea}");
+            Console.Error.WriteLine($"CONSUMER: connection.CallbackException: {cea}");
         };
 
         connection.ConnectionBlocked += (s, ea) =>
         {
             var cbea = (ConnectionBlockedEventArgs)ea;
-            Console.Error.WriteLine("CONSUMER: connection.ConnectionBlocked: {cbea}");
+            Console.Error.WriteLine($"CONSUMER: connection.ConnectionBlocked: {cbea}");
         };
 
         connection.ConnectionUnblocked += (s, ea) =>
         {
-            Console.Error.WriteLine("CONSUMER: connection.ConnectionUnblocked: {ea}");
+            Console.Error.WriteLine($"CONSUMER: connection.ConnectionUnblocked: {ea}");
         };
 
         connection.ConnectionShutdown += (s, ea) =>
         {
             var sdea = (ShutdownEventArgs)ea;
-            Console.Error.WriteLine("CONSUMER: connection.ConnectionShutdown: {sdea}");
+            Console.Error.WriteLine($"CONSUMER: connection.ConnectionShutdown: {sdea}");
         };
 
         using (var channel = connection.CreateModel())
@@ -82,13 +97,13 @@ using (connection)
             channel.CallbackException += (s, ea) =>
             {
                 var cea = (CallbackExceptionEventArgs)ea;
-                Console.Error.WriteLine("CONSUMER: channel.CallbackException: {cea}");
+                Console.Error.WriteLine($"CONSUMER: channel.CallbackException: {cea}");
             };
 
             channel.ModelShutdown += (s, ea) =>
             {
                 var sdea = (ShutdownEventArgs)ea;
-                Console.Error.WriteLine("CONSUMER: channel.ModelShutdown: {sdea}");
+                Console.Error.WriteLine($"CONSUMER: channel.ModelShutdown: {sdea}");
             };
 
             channel.BasicQos(0, prefetch_count, false);

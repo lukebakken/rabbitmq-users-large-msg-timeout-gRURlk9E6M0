@@ -4,13 +4,28 @@ using RabbitMQ.Client.Exceptions;
 
 using System.Text;
 
-Console.WriteLine("PRODUCER: waiting 5 seconds to try initial connection");
+string hostName = "rabbitmq";
+ushort port = 5672;
+
+string? hostNameStr = Environment.GetEnvironmentVariable("RABBITMQ_NODENAME");
+if (false == String.IsNullOrWhiteSpace(hostNameStr))
+{
+    hostName = hostNameStr;
+}
+
+string? nodePortStr = Environment.GetEnvironmentVariable("RABBITMQ_NODE_PORT");
+if (false == String.IsNullOrWhiteSpace(nodePortStr))
+{
+    port = ushort.Parse(nodePortStr);
+}
+
+Console.WriteLine($"PRODUCER: waiting 5 seconds to try initial connection to {hostName}:{port}");
 Thread.Sleep(TimeSpan.FromSeconds(5));
 
 var factory = new ConnectionFactory()
 {
-    HostName = "rabbitmq",
-    Port = 5672
+    HostName = hostName,
+    Port = port
 };
 
 bool connected = false;
@@ -27,7 +42,7 @@ while(!connected)
     catch (BrokerUnreachableException)
     {
         connected = false;
-        Console.WriteLine("PRODUCER: waiting 5 seconds to re-try connection!");
+        Console.WriteLine($"PRODUCER: waiting 5 seconds to re-try connection!");
         Thread.Sleep(TimeSpan.FromSeconds(5));
     }
 }
@@ -43,24 +58,24 @@ using (connection)
         connection.CallbackException += (s, ea) =>
         {
             var cea = (CallbackExceptionEventArgs)ea;
-            Console.Error.WriteLine("PRODUCER: connection.CallbackException: {cea}");
+            Console.Error.WriteLine($"PRODUCER: connection.CallbackException: {cea}");
         };
 
         connection.ConnectionBlocked += (s, ea) =>
         {
             var cbea = (ConnectionBlockedEventArgs)ea;
-            Console.Error.WriteLine("PRODUCER: connection.ConnectionBlocked: {cbea}");
+            Console.Error.WriteLine($"PRODUCER: connection.ConnectionBlocked: {cbea}");
         };
 
         connection.ConnectionUnblocked += (s, ea) =>
         {
-            Console.Error.WriteLine("PRODUCER: connection.ConnectionUnblocked: {ea}");
+            Console.Error.WriteLine($"PRODUCER: connection.ConnectionUnblocked: {ea}");
         };
 
         connection.ConnectionShutdown += (s, ea) =>
         {
             var sdea = (ShutdownEventArgs)ea;
-            Console.Error.WriteLine("PRODUCER: connection.ConnectionShutdown: {sdea}");
+            Console.Error.WriteLine($"PRODUCER: connection.ConnectionShutdown: {sdea}");
         };
 
         using (var channel = connection.CreateModel())
@@ -68,13 +83,13 @@ using (connection)
             channel.CallbackException += (s, ea) =>
             {
                 var cea = (CallbackExceptionEventArgs)ea;
-                Console.Error.WriteLine("PRODUCER: channel.CallbackException: {cea}");
+                Console.Error.WriteLine($"PRODUCER: channel.CallbackException: {cea}");
             };
 
             channel.ModelShutdown += (s, ea) =>
             {
                 var sdea = (ShutdownEventArgs)ea;
-                Console.Error.WriteLine("PRODUCER: channel.ModelShutdown: {sdea}");
+                Console.Error.WriteLine($"PRODUCER: channel.ModelShutdown: {sdea}");
             };
 
             channel.QueueDeclare(queue: "hello", durable: false, exclusive: false, autoDelete: false, arguments: null);
