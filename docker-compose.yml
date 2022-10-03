@@ -12,12 +12,25 @@ services:
       - rabbitnet
     depends_on:
       - rmq
+      - proxy
   consumer:
     build: consumer
     networks:
       - rabbitnet
     depends_on:
       - rmq
+      - proxy
+  proxy:
+    image: ghcr.io/shopify/toxiproxy:latest
+    hostname: proxy
+    networks:
+      - rabbitnet
+  proxy-sidecar:
+    build: proxy-sidecar
+    networks:
+      - rabbitnet
+    depends_on:
+      - proxy
   rmq:
     build: rmq
     hostname: rabbitmq
