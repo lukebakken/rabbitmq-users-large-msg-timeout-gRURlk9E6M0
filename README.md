@@ -6,14 +6,14 @@ https://groups.google.com/g/rabbitmq-users/c/gRURlk9E6M0
 docker compose run proxy-sidecar curl -4vvv http://proxy:8474/proxies/rabbitmq-consumer/toxics
 ```
 
-## Create consumer timeout toxic (both directions)
+## Create producer bandwidth toxic (both directions)
 
 ```
-./add-consumer-toxic.sh
+./add-producer-toxic.sh
 ```
 
-## Remove consumer timeout toxic (both directions)
+## Remove producer bandwidth toxic (both directions)
 
 ```
-./delete-consumer-toxic.sh
+./delete-producer-toxic.sh
 ```

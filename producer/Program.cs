@@ -96,6 +96,8 @@ using (connection)
 
         using (var channel = connection.CreateModel())
         {
+            channel.ConfirmSelect();
+
             channel.CallbackException += (s, ea) =>
             {
                 var cea = (CallbackExceptionEventArgs)ea;
@@ -115,13 +117,16 @@ using (connection)
                 rnd.NextBytes(buffer);
                 string now = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss.ffffff");
                 channel.BasicPublish(exchange: "", routingKey: "hello", basicProperties: null, body: buffer);
-                Console.WriteLine($"PRODUCER sent large message at {now}");
-
+                channel.WaitForConfirmsOrDie();
+                Console.WriteLine($"PRODUCER sent large message at {now}, exiting!");
+                break;
+                /*
                 if (latch.WaitOne(latchWaitSpan))
                 {
                     Console.WriteLine("PRODUCER EXITING");
                     break;
                 }
+                */
             }
         }
     }

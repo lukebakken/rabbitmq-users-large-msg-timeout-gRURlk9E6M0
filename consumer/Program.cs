@@ -2,8 +2,6 @@
 using RabbitMQ.Client.Events;
 using RabbitMQ.Client.Exceptions;
 
-using System.Text;
-
 AutoResetEvent latch = new AutoResetEvent(false);
 
 void CancelHandler(object? sender, ConsoleCancelEventArgs e)
@@ -30,8 +28,12 @@ if (false == String.IsNullOrWhiteSpace(nodePortStr))
     port = ushort.Parse(nodePortStr);
 }
 
-Console.WriteLine($"CONSUMER: waiting 5 seconds to try initial connection to {hostName}:{port}");
-Thread.Sleep(TimeSpan.FromSeconds(5));
+Console.WriteLine($"CONSUMER: waiting 30 seconds to try initial connection to {hostName}:{port}");
+if (latch.WaitOne(TimeSpan.FromSeconds(30)))
+{
+    Console.WriteLine("CONSUMER EXITING");
+    Environment.Exit(0);
+}
 
 var factory = new ConnectionFactory()
 {
