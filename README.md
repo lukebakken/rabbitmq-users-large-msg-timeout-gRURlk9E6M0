@@ -1,6 +1,4 @@
-# rabbitmq-dotnet-client-1259
-
-https://github.com/rabbitmq/rabbitmq-dotnet-client/discussions/1259
+https://groups.google.com/g/rabbitmq-users/c/gRURlk9E6M0
 
 ## List consumer toxics
 

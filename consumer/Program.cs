@@ -59,7 +59,6 @@ while(!connected)
 }
 
 int message_count = 0;
-const ushort prefetch_count = 30;
 
 using (connection)
 {
@@ -106,7 +105,7 @@ using (connection)
                 Console.Error.WriteLine($"CONSUMER: channel.ModelShutdown: {sdea}");
             };
 
-            channel.BasicQos(0, prefetch_count, false);
+            channel.BasicQos(0, 1, false);
 
             channel.QueueDeclare(queue: "hello", durable: false, exclusive: false, autoDelete: false, arguments: null);
 
@@ -116,22 +115,16 @@ using (connection)
             consumer.Received += (model, ea) =>
             {
                 DateTime received = DateTime.Now;
-                var body = ea.Body.ToArray();
-                string sentText = Encoding.ASCII.GetString(body);
-                DateTime sent = DateTime.ParseExact(sentText, "MM/dd/yyyy HH:mm:ss.ffffff", null);
-                TimeSpan delay = received - sent;
                 string receivedText = received.ToString("MM/dd/yyyy HH:mm:ss.ffffff");
-                Console.WriteLine($"CONSUMER received at {receivedText}, sent at {sentText} - count: {message_count++}, delay: {delay}");
-                if ((message_count % prefetch_count) == 0)
-                {
-                    Console.WriteLine($"CONSUMER SENDING BATCH ACK pfc: {prefetch_count} mc: {message_count}");
-                    channel.BasicAck(deliveryTag: ea.DeliveryTag, multiple: true);
-                }
+                Console.WriteLine($"CONSUMER received at {receivedText}, size {ea.Body.Length}, message_count: {message_count++}");
+                channel.BasicAck(deliveryTag: ea.DeliveryTag, multiple: false);
             };
 
             channel.BasicConsume(queue: "hello", autoAck: false, consumer: consumer);
 
             latch.WaitOne();
+
+            Console.WriteLine("CONSUMER EXITING");
         }
     }
 }

@@ -2,7 +2,19 @@
 using RabbitMQ.Client.Events;
 using RabbitMQ.Client.Exceptions;
 
+using System;
 using System.Text;
+
+AutoResetEvent latch = new AutoResetEvent(false);
+
+void CancelHandler(object? sender, ConsoleCancelEventArgs e)
+{
+    Console.WriteLine("CTRL-C pressed, exiting!");
+    e.Cancel = true;
+    latch.Set();
+}
+
+Console.CancelKeyPress += new ConsoleCancelEventHandler(CancelHandler);
 
 string hostName = "rabbitmq";
 ushort port = 5672;
@@ -28,11 +40,12 @@ var factory = new ConnectionFactory()
     Port = port
 };
 
+TimeSpan latchWaitSpan = TimeSpan.FromSeconds(1);
 bool connected = false;
 
 IConnection? connection = null;
 
-while(!connected)
+while (!connected)
 {
     try
     {
@@ -46,6 +59,9 @@ while(!connected)
         Thread.Sleep(TimeSpan.FromSeconds(5));
     }
 }
+
+byte[] buffer = new byte[1024 * 1024 * 100];
+Random rnd = new Random();
 
 using (connection)
 {
@@ -96,11 +112,16 @@ using (connection)
 
             while (true)
             {
-                string message = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss.ffffff");
-                var body = Encoding.ASCII.GetBytes(message);
-                channel.BasicPublish(exchange: "", routingKey: "hello", basicProperties: null, body: body);
-                Console.WriteLine($"PRODUCER sent {message}");
-                Thread.Sleep(TimeSpan.FromSeconds(1));
+                rnd.NextBytes(buffer);
+                string now = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss.ffffff");
+                channel.BasicPublish(exchange: "", routingKey: "hello", basicProperties: null, body: buffer);
+                Console.WriteLine($"PRODUCER sent large message at {now}");
+
+                if (latch.WaitOne(latchWaitSpan))
+                {
+                    Console.WriteLine("PRODUCER EXITING");
+                    break;
+                }
             }
         }
     }

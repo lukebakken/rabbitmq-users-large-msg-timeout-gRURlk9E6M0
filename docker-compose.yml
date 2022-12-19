@@ -1,47 +1,34 @@
 version: '3'
 
-networks:
-  rabbitnet:
-    name: rabbitnet
-    driver: bridge
-
 services:
   producer:
     build: producer
     environment:
       RABBITMQ_NODENAME: proxy
       RABBITMQ_NODE_PORT: 55000
-    networks:
-      - rabbitnet
     depends_on:
       - rmq
       - proxy
+      - proxy-sidecar
   consumer:
     build: consumer
     environment:
       RABBITMQ_NODENAME: proxy
       RABBITMQ_NODE_PORT: 55001
-    networks:
-      - rabbitnet
     depends_on:
       - rmq
       - proxy
+      - proxy-sidecar
   proxy:
     image: ghcr.io/shopify/toxiproxy:latest
     hostname: proxy
-    networks:
-      - rabbitnet
   proxy-sidecar:
     build: proxy-sidecar
-    networks:
-      - rabbitnet
     depends_on:
       - proxy
   rmq:
     build: rmq
     hostname: rabbitmq
-    networks:
-      - rabbitnet
     ports:
       # HOST:CONTAINER
       - 15672:15672
