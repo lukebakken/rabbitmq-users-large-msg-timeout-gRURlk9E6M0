@@ -2,9 +2,7 @@
 using RabbitMQ.Client.Events;
 using RabbitMQ.Client.Exceptions;
 
-using System;
-using System.Text;
-
+TimeSpan fiveSeconds = TimeSpan.FromSeconds(5);
 AutoResetEvent latch = new AutoResetEvent(false);
 
 void CancelHandler(object? sender, ConsoleCancelEventArgs e)
@@ -12,6 +10,15 @@ void CancelHandler(object? sender, ConsoleCancelEventArgs e)
     Console.WriteLine("CTRL-C pressed, exiting!");
     e.Cancel = true;
     latch.Set();
+}
+
+void WaitAndMaybeExit(TimeSpan wait)
+{
+    if (latch.WaitOne(wait))
+    {
+        Console.WriteLine("PRODUCER EXITING");
+        Environment.Exit(0);
+    }
 }
 
 Console.CancelKeyPress += new ConsoleCancelEventHandler(CancelHandler);
@@ -31,8 +38,12 @@ if (false == String.IsNullOrWhiteSpace(nodePortStr))
     port = ushort.Parse(nodePortStr);
 }
 
-Console.WriteLine($"PRODUCER: waiting 5 seconds to try initial connection to {hostName}:{port}");
-Thread.Sleep(TimeSpan.FromSeconds(5));
+string? inContainer = Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER");
+if (false == String.IsNullOrWhiteSpace(inContainer))
+{
+    Console.WriteLine($"PRODUCER: waiting 5 seconds to try initial connection to {hostName}:{port}");
+    WaitAndMaybeExit(fiveSeconds);
+}
 
 var factory = new ConnectionFactory()
 {
@@ -56,7 +67,7 @@ while (!connected)
     {
         connected = false;
         Console.WriteLine($"PRODUCER: waiting 5 seconds to re-try connection!");
-        Thread.Sleep(TimeSpan.FromSeconds(5));
+        WaitAndMaybeExit(fiveSeconds);
     }
 }
 
