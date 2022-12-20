@@ -29,6 +29,8 @@ services:
   rmq:
     build: rmq
     hostname: rabbitmq
+    environment:
+      LOG: debug
     ports:
       # HOST:CONTAINER
       - 15672:15672

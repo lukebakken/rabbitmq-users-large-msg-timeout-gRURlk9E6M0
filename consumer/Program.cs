@@ -38,7 +38,9 @@ if (latch.WaitOne(TimeSpan.FromSeconds(30)))
 var factory = new ConnectionFactory()
 {
     HostName = hostName,
-    Port = port
+    Port = port,
+    AutomaticRecoveryEnabled = false,
+    TopologyRecoveryEnabled = false
 };
 
 bool connected = false;
